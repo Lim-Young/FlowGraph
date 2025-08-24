@@ -272,15 +272,9 @@ bool UFlowAsset::CanFlowAssetReferenceFlowNode(const UClass& FlowNodeClass, FTex
 		return false;
 	}
 
-	FAssetReferenceFilterContext AssetReferenceFilterContext;
-
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 5
-	AssetReferenceFilterContext.ReferencingAssets.Add(FAssetData(this));
-#else
-	AssetReferenceFilterContext.AddReferencingAsset(FAssetData(this));
-#endif
-
 	// Confirm plugin reference restrictions are being respected
+	FAssetReferenceFilterContext AssetReferenceFilterContext;
+	AssetReferenceFilterContext.AddReferencingAsset(FAssetData(this));
 	const TSharedPtr<IAssetReferenceFilter> FlowAssetReferenceFilter = GEditor->MakeAssetReferenceFilter(AssetReferenceFilterContext);
 	if (FlowAssetReferenceFilter.IsValid())
 	{
@@ -1028,6 +1022,27 @@ TArray<UFlowNode*> UFlowAsset::GetNodesInExecutionOrder(UFlowNode* FirstIterated
 	FoundNodes.Shrink();
 
 	return FoundNodes;
+}
+
+TArray<UFlowNode*> UFlowAsset::GatherNodesConnectedToAllInputs() const
+{
+	TSet<TObjectKey<UFlowNode>> IteratedNodes;
+	TArray<UFlowNode*> ConnectedNodes;
+
+	// Nodes connected to the Start node
+	UFlowNode* DefaultEntryNode = GetDefaultEntryNode();
+	GetNodesInExecutionOrder_Recursive(DefaultEntryNode, IteratedNodes, ConnectedNodes);
+
+	// Nodes connected to Custom Input node(s)
+	for (const TPair<FGuid, UFlowNode*>& Node : ObjectPtrDecay(Nodes))
+	{
+		if (UFlowNode_CustomInput* CustomInput = Cast<UFlowNode_CustomInput>(Node.Value))
+		{
+			GetNodesInExecutionOrder_Recursive(CustomInput, IteratedNodes, ConnectedNodes);
+		}
+	}
+
+	return ConnectedNodes;
 }
 
 void UFlowAsset::AddInstance(UFlowAsset* Instance)
