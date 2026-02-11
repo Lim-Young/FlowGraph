@@ -11,6 +11,7 @@
 #include "FlowAsset.h"
 #include "Nodes/Graph/FlowNode_SubGraph.h"
 
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Misc/Attribute.h"
 #include "Misc/MessageDialog.h"

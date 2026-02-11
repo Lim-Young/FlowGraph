@@ -8,6 +8,7 @@
 #include "AddOns/FlowNodeAddOn.h"
 #include "Asset/FlowAssetParams.h"
 #include "Asset/FlowAssetParamsUtils.h"
+#include "Interfaces/FlowExecutionGate.h"
 #include "Nodes/FlowNodeBase.h"
 #include "Nodes/Graph/FlowNode_CustomInput.h"
 #include "Nodes/Graph/FlowNode_CustomOutput.h"
@@ -1012,6 +1013,11 @@ void UFlowAsset::PreStartFlow()
 
 void UFlowAsset::StartFlow(IFlowDataPinValueSupplierInterface* DataPinValueSupplier)
 {
+	if (FFlowExecutionGate::IsHalted())
+	{
+		return;
+	}
+
 	PreStartFlow();
 
 	if (UFlowNode* ConnectedEntryNode = GetDefaultEntryNode())
@@ -1075,6 +1081,11 @@ TWeakObjectPtr<UFlowAsset> UFlowAsset::GetFlowInstance(UFlowNode_SubGraph* SubGr
 
 void UFlowAsset::TriggerCustomInput_FromSubGraph(UFlowNode_SubGraph* SubGraphNode, const FName& EventName) const
 {
+	if (FFlowExecutionGate::IsHalted())
+	{
+		return;
+	}
+
 	// NOTE (gtaylor) Custom Input nodes cannot currently add data pins (like Start or DefineProperties nodes can)
 	// but we may want to allow them to source parameters, so I am providing the subgraph node as the 
 	// IFlowDataPinValueSupplierInterface when triggering the node (even though it's not used at this time).
@@ -1088,6 +1099,11 @@ void UFlowAsset::TriggerCustomInput_FromSubGraph(UFlowNode_SubGraph* SubGraphNod
 
 void UFlowAsset::TriggerCustomInput(const FName& EventName, IFlowDataPinValueSupplierInterface* DataPinValueSupplier)
 {
+	if (FFlowExecutionGate::IsHalted())
+	{
+		return;
+	}
+
 	for (UFlowNode_CustomInput* CustomInputNode : CustomInputNodes)
 	{
 		if (CustomInputNode->EventName == EventName)
@@ -1127,6 +1143,11 @@ void UFlowAsset::TriggerCustomOutput(const FName& EventName)
 
 void UFlowAsset::TriggerInput(const FGuid& NodeGuid, const FName& PinName, const FConnectedPin& FromPin)
 {
+	if (FFlowExecutionGate::EnqueueDeferredTriggerInput(this, NodeGuid, PinName, FromPin))
+	{
+		return;
+	}
+
 	if (UFlowNode* Node = Nodes.FindRef(NodeGuid))
 	{
 		if (!ActiveNodes.Contains(Node))
