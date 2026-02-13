@@ -12,7 +12,7 @@ UFlowNodeAddOn_BoolPredicate::UFlowNodeAddOn_BoolPredicate()
 #endif
 
 	InputPins.Empty();
-	InputPins.Add(FFlowPin(TEXT("InputBool"), EFlowPinType::Bool));
+	InputPins.Add(FFlowPin(TEXT("InputBool"), FFlowPinTypeName(FFlowPinTypeNamesStandard::PinTypeNameBool)));
 }
 
 bool UFlowNodeAddOn_BoolPredicate::EvaluatePredicate_Implementation() const
